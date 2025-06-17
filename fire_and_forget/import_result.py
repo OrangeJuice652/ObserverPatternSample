@@ -1,4 +1,4 @@
-import dataclass
+from dataclasses import dataclass
 from typing import List, Optional
 
 
@@ -14,7 +14,7 @@ class ImportResult:
     SKU_UPSERT: int = 0
     VALIDATE_ERROR: int = 1
 
-    event_code: int
-    error_messages: List[str]
+    event_code: int = -1
+    error_messages: List[str] = []
     sku: SkuInput
 
