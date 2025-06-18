@@ -1,28 +1,25 @@
 from fire_and_forget.import_result import ImportResult
 from fire_and_forget.observers import IObserver
-from typing import List
+from typing import List, Optional
 from queue import Queue
 from threading import Thread
-import time
 
 
 class Subject:
-    def __init__(self, observers: List[IObserver]=[]):
-        self.observers = observers
+    def __init__(self, observers: Optional[List[IObserver]] = None):
+        self.observers = observers if observers else []
         self.queue = Queue()
-        self.thread = Thread(target=self.worker)
+        self.thread = Thread(target=self.worker, daemon=True)
         self.thread.start()
 
     def attach_observer(self, observer: IObserver):
-        self.observers.append(
-            observer
-        )
+        self.observers.append(observer)
 
     def detach_observer(self, number: int):
         try:
             self.observers.pop(number)
         except IndexError:
-            print(f'Cant detach {number}th observer')
+            print(f"Can't detach {number}th observer")
 
     def notify(self, import_result: ImportResult):
         for observer in self.observers:
@@ -31,7 +28,13 @@ class Subject:
     def worker(self):
         while True:
             observer, import_result = self.queue.get()
-            time.sleep(1)
+            if observer is None and import_result is None:
+                self.queue.task_done()
+                break
             observer.commit(import_result)
             self.queue.task_done()
+
+    def worker_stop(self):
+        self.queue.put((None, None))
+        self.thread.join()
 
